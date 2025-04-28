@@ -20,36 +20,33 @@
         }
         
         .container {
-          width: 50%;
-          text-align: center;
+            width: 90%; /* Más ancho para el área general */
+            max-width: 1000px;
+            text-align: center;
         }
         
         .card {
             background: #ffffff;
-            padding: 5px;
+            padding: 10px;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 95%;
-            height: auto;
-            display: flex;
-            justify-content: center;
-            margin: 0 auto;
+            width: 100%;
+            margin: 10px auto;
         }
         
         .label {
             display: block;
-            font-size: 15px;
+            font-size: 14px;
             color: #333;
-            margin-bottom: 5px;
-            margin-top: 10px;
+            margin: 8px 0 4px 0;
         }
         
         .input {
-            width: 100%;
-            padding: 10px;
+            width: 100px; /* Inputs más angostos */
+            padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            font-size: 10px;
+            font-size: 12px;
             background: #f9f9f9;
             transition: border 0.3s;
         }
@@ -60,16 +57,17 @@
             background: #fff;
         }
         
-        
         button {
-            width: 70%;
-            padding: 5px;
+            width: 100px;
+            padding: 6px;
             color: white;
+            background: #ff7f7f;
             border: none;
             border-radius: 5px;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
             transition: background-color 0.3s;
+            margin-top: 10px;
         }
         
         button:hover {
@@ -77,25 +75,31 @@
         }
         
         .content {
-            gap: 20px;
-            margin: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
         
-         h3 {
-             font-size:16px;
+        h3 {
+            font-size: 18px;
             text-align: center;
             color: #ff7f7f;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
         
-        .button{
-            width: 100px;
+        canvas {
+            width: 100%;
+            height: 600px;
+            max-width: 950px;
+            border: 1px solid #ccc;
+            margin-top: 15px;
         }
     </style>
 </head>
 
 <body>
-    <div id="simulacion" class="container">
+    <div id="simulacion" class="container row">
         <h3>Simulación de Carrito Diferencial</h3>
         <div class="card">
             <div class="content">
@@ -118,7 +122,7 @@
         </div>
     </div>
     
-    <div class="container mt-3" style="max-width: 600px;">
+    <div class="container mt-3" style="max-width: 300px;">
         <h3 class="text-danger text-center mb-4">Modelos Cinemático y Dinámico</h3>
     
         <div class="card p-3 mb-3" style="font-size: 14px;">
@@ -194,21 +198,16 @@
         
         // Moverse con teclas
         function updateFromKeyboard() {
-            if (keys["ArrowUp"]) {
-                vIzq = vIzqMax;
-                vDer = vDerMax;
-            } else if (keys["ArrowDown"]) {
-                vIzq = -vIzqMax;
-                vDer = -vDerMax;
-            } else if (keys["ArrowLeft"]) {
-                vIzq = -vIzqMax;
-                vDer = vDerMax;
-            } else if (keys["ArrowRight"]) {
-                vIzq = vIzqMax;
-                vDer = -vDerMax;
-            } else {
-                vIzq = vDer = 0;
-            }
+            let avance = 0;
+            let giro = 0;
+        
+            if (keys["ArrowUp"]) avance = 1;
+            if (keys["ArrowDown"]) avance = -1;
+            if (keys["ArrowLeft"]) giro = 1;
+            if (keys["ArrowRight"]) giro = -1;
+        
+            vIzq = (avance * vIzqMax) + (giro * vIzqMax);
+            vDer = (avance * vDerMax) - (giro * vDerMax);
         }
         
         // Actualizar posición según vIzq y vDer
@@ -236,6 +235,14 @@
         drawVehicle();
         loop();
         
-        </script>
+        
+        window.addEventListener("keydown", function (e) {
+          const scrollKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"," "];
+    
+          if (scrollKeys.includes(e.key)) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+    </script>
 </body>
 </html>
