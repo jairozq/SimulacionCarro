@@ -20,7 +20,7 @@
         }
         
         .container {
-            width: 90%; /* Más ancho para el área general */
+            width: 90%;
             max-width: 1000px;
             text-align: center;
         }
@@ -42,7 +42,7 @@
         }
         
         .input {
-            width: 100px; /* Inputs más angostos */
+            width: 100px;
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
