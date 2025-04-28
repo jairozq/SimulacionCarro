@@ -116,8 +116,8 @@
                 <div class="card p-4 my-3">
                     <div id="modalVelocidades" style="
                         position: absolute;
-                        top: 100px;
-                        left: 50%;
+                        top: -100px;
+                        left: 150px;
                         transform: translateX(-70%);
                         width: 300px;
                         background-color: rgba(255, 255, 255, 0.9);
@@ -131,6 +131,13 @@
                         <h5 style="color: #ff7f7f;">Velocidades Calculadas</h5>
                         <p><strong>Motor Izquierdo:</strong> <span id="velIzqTexto">0 </span> km/h</p>
                         <p><strong>Motor Derecho:</strong> <span id="velDerTexto">0 </span>km/h</p>
+                        <p><strong>Posición X:</strong> <span id="posXTexto">0</span></p>
+                        <p><strong>Posición Y:</strong> <span id="posYTexto">0</span></p>
+                        <div style="margin-top: 10px;">
+                            <button id="btnCambiarModo">Cambiar Modo</button>
+                            <button id="btnEmpezar" style="display:none;">Empezar</button>
+                        </div>
+                            <span id="modoActual" style="margin-left:10px;">Modo: Punto a punto</span>
                     </div>
                     <canvas id="simulationCanvas" width="600" height="400" style="border:1px solid #ccc;"></canvas>
                     <p style="margin-top:10px;">Usa las teclas de flechas (↑ ↓ ← →) para mover el vehículo.</p>
@@ -178,25 +185,179 @@
         
         let posX = 300;
         let posY = 200;
-        let theta = 0; // orientación (radianes)
+        let theta = 0;
         
-        let vIzqMax = 0; // velocidad máxima motor izquierdo
-        let vDerMax = 0; // velocidad máxima motor derecho
+        let vIzqMax = 0;
+        let vDerMax = 0;
         
-        let vIzq = 0;    // velocidad actual izquierda
-        let vDer = 0;    // velocidad actual derecha
+        let vIzq = 0;
+        let vDer = 0;
         
-        const L = 50; // distancia entre ruedas
+        const L = 50;
         const keys = {};
+        
+        let puntos = [];
+        let objetivo = null;
+        let velocidadMovimiento = 2;
+        
+        let modoPuntoAPunto = true; // true = tu modo original, false = modo nuevo
+        let indiceTrayectoria = 0;
+        let enMovimiento = false;
+        
+        const btnCambiarModo = document.getElementById('btnCambiarModo');
+        const btnEmpezar = document.getElementById('btnEmpezar');
+        const modoActualTexto = document.getElementById('modoActual');
+        btnCambiarModo.addEventListener('click', () => {
+            modoPuntoAPunto = !modoPuntoAPunto;
+            puntos = [];
+            indiceTrayectoria = 0;
+            enMovimiento = false;
+            posX = canvas.width/2; // opcional: reiniciar posición
+            posY = canvas.height/2;
+            theta = 0;
+        
+            if (modoPuntoAPunto) {
+                btnEmpezar.style.display = 'none';
+                modoActualTexto.textContent = "Modo: Punto a punto";
+            } else {
+                btnEmpezar.style.display = 'inline-block';
+                modoActualTexto.textContent = "Modo: Trayectoria";
+            }
+        });
+        
+        btnEmpezar.addEventListener('click', () => {
+            if (!modoPuntoAPunto && puntos.length > 0) {
+                enMovimiento = true;
+                indiceTrayectoria = 0;
+            }
+        });
+        
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+        
+            if (modoPuntoAPunto) {
+                // ✨ Aquí conservamos tu lógica original
+                puntos = [{x, y}];
+                indiceTrayectoria = 0;
+                enMovimiento = true;
+            } else {
+                // ✨ Nuevo comportamiento: solo agrega puntos
+                puntos.push({x, y});
+            }
+        });
+        
+        function moverEnTrayectoria() {
+            if (!enMovimiento || puntos.length == 0 || indiceTrayectoria >= puntos.length) return;
+        
+            const objetivo = puntos[indiceTrayectoria];
+            const dx = objetivo.x - posX;
+            const dy = objetivo.y - posY;
+            const distancia = Math.sqrt(dx*dx + dy*dy);
+        
+            const velocidad = 2;
+        
+            if (distancia > 1) {
+                const angulo = Math.atan2(dy, dx);
+                posX += velocidad * Math.cos(angulo);
+                posY += velocidad * Math.sin(angulo);
+                theta = angulo;
+            } else {
+                indiceTrayectoria++;
+                if (indiceTrayectoria >= puntos.length) {
+                    enMovimiento = false;
+                }
+            }
+        }
+
+
+        canvas.addEventListener('click', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+        
+            puntos.push({x, y});
+            objetivo = {x, y};
+        });
+
         
         function drawVehicle() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+            if (puntos.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(puntos[0].x, puntos[0].y);
+                for (let i = 1; i < puntos.length; i++) {
+                    ctx.lineTo(puntos[i].x, puntos[i].y);
+                }
+                ctx.strokeStyle = "red";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        
+            for (const punto of puntos) {
+                ctx.beginPath();
+                ctx.arc(punto.x, punto.y, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+            }
+        
             ctx.save();
             ctx.translate(posX, posY);
             ctx.rotate(theta);
             ctx.fillStyle = "blue";
             ctx.fillRect(-20, -10, 40, 20);
             ctx.restore();
+        }
+        
+        function moverHaciaObjetivo() {
+            if (objetivo) {
+                const dx = objetivo.x - posX;
+                const dy = objetivo.y - posY;
+                const distancia = Math.sqrt(dx * dx + dy * dy);
+        
+                if (distancia > 1) {
+                    const dirX = dx / distancia;
+                    const dirY = dy / distancia;
+        
+                    posX += dirX * velocidadMovimiento;
+                    posY += dirY * velocidadMovimiento;
+                    
+                    theta = Math.atan2(dirY, dirX);
+                } else {
+                    objetivo = null;
+                }
+                document.getElementById("velIzqTexto").textContent = 2 * 3.6;
+                document.getElementById("velDerTexto").textContent = 2 * 3.6;
+            }
+        }
+        
+        canvas.addEventListener('mousedown', function (e) {
+            dibujando = true;
+            trayectoria = []; // Resetea la trayectoria anterior
+            agregarPunto(e);
+        });
+        
+        canvas.addEventListener('mousemove', function (e) {
+            if (dibujando) {
+                agregarPunto(e);
+            }
+        });
+        
+        canvas.addEventListener('mouseup', function () {
+            dibujando = false;
+            if (trayectoria.length > 0) {
+                enMovimiento = true;
+                indiceTrayectoria = 0;
+            }
+        });
+        
+        function agregarPunto(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            trayectoria.push({ x, y });
         }
         
         function simularMovimiento() {
@@ -216,7 +377,6 @@
             document.getElementById("velDerTexto").textContent = vDerMax.toFixed(2)* 3.6;
         }
         
-        // Moverse con teclas
         function updateFromKeyboard() {
             let avance = 0;
             let giro = 0;
@@ -229,6 +389,12 @@
             vIzq = (avance * vIzqMax) + (giro * vIzqMax);
             vDer = (avance * vDerMax) - (giro * vDerMax);
         }
+        
+        function ajustarTamañoCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+        ajustarTamañoCanvas();
         
         // Actualizar posición según vIzq y vDer
         function updatePosition() {
@@ -249,6 +415,15 @@
             updateFromKeyboard();
             updatePosition();
             drawVehicle();
+            
+            if (modoPuntoAPunto) {
+                moverHaciaObjetivo(); // solo en modo 1
+            } else {
+                moverEnTrayectoria(); // solo en modo 2
+            }
+            
+            document.getElementById("posXTexto").textContent = posX.toFixed(0);
+            document.getElementById("posYTexto").textContent = posY.toFixed(0);
             requestAnimationFrame(loop);
         }
         
