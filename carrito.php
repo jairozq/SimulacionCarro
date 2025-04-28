@@ -142,6 +142,7 @@
                     </div>
                     <canvas id="simulationCanvas" width="600" height="400" style="border:1px solid #ccc;"></canvas>
                     <p style="margin-top:10px;">Usa las teclas de flechas (↑ ↓ ← →) para mover el vehículo.</p>
+                    <span style="margin-top:10px; font-size:10px;">*Si los motores no tienen voltaje no andara el carro*</span>
                 </div>
             </div>
         </div>
