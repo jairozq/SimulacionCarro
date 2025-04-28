@@ -138,6 +138,7 @@
                             <button id="btnEmpezar" style="display:none;">Empezar</button>
                         </div>
                             <span id="modoActual" style="margin-left:10px;">Modo: Punto a punto</span>
+                            <span id="expl" style="display: none; font-size:10px;">(Ingrese punto a punto con click y precione empezar)</span>
                     </div>
                     <canvas id="simulationCanvas" width="600" height="400" style="border:1px solid #ccc;"></canvas>
                     <p style="margin-top:10px;">Usa las teclas de flechas (↑ ↓ ← →) para mover el vehículo.</p>
@@ -200,64 +201,72 @@
         let objetivo = null;
         let velocidadMovimiento = 2;
         
-        let modoPuntoAPunto = true; // true = tu modo original, false = modo nuevo
+        let empezarMovimiento = false;
+        let modoPuntoAPunto = true;
         let indiceTrayectoria = 0;
         let enMovimiento = false;
         
         const btnCambiarModo = document.getElementById('btnCambiarModo');
         const btnEmpezar = document.getElementById('btnEmpezar');
+        const expl = document.getElementById('expl');
         const modoActualTexto = document.getElementById('modoActual');
+    
         btnCambiarModo.addEventListener('click', () => {
             modoPuntoAPunto = !modoPuntoAPunto;
             puntos = [];
+            objetivo = null;
             indiceTrayectoria = 0;
             enMovimiento = false;
-            posX = canvas.width/2; // opcional: reiniciar posición
+            empezarMovimiento = false;
+            posX = canvas.width/2;
             posY = canvas.height/2;
             theta = 0;
-        
+    
             if (modoPuntoAPunto) {
+                expl.style.display = 'none';
                 btnEmpezar.style.display = 'none';
                 modoActualTexto.textContent = "Modo: Punto a punto";
             } else {
                 btnEmpezar.style.display = 'inline-block';
+                expl.style.display = 'inline-block';
                 modoActualTexto.textContent = "Modo: Trayectoria";
             }
         });
-        
+    
         btnEmpezar.addEventListener('click', () => {
             if (!modoPuntoAPunto && puntos.length > 0) {
-                enMovimiento = true;
+                empezarMovimiento = true;
                 indiceTrayectoria = 0;
+                enMovimiento = true;
             }
         });
-        
+    
         canvas.addEventListener('click', (event) => {
             const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-        
+            const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+    
             if (modoPuntoAPunto) {
-                // ✨ Aquí conservamos tu lógica original
                 puntos = [{x, y}];
-                indiceTrayectoria = 0;
+                objetivo = {x, y};
                 enMovimiento = true;
             } else {
-                // ✨ Nuevo comportamiento: solo agrega puntos
                 puntos.push({x, y});
             }
         });
-        
+    
         function moverEnTrayectoria() {
-            if (!enMovimiento || puntos.length == 0 || indiceTrayectoria >= puntos.length) return;
-        
+            if (!empezarMovimiento || !enMovimiento || puntos.length == 0 || indiceTrayectoria >= puntos.length) return;
+    
             const objetivo = puntos[indiceTrayectoria];
             const dx = objetivo.x - posX;
             const dy = objetivo.y - posY;
             const distancia = Math.sqrt(dx*dx + dy*dy);
-        
-            const velocidad = 2;
-        
+    
+            const velocidad = 1;
+            document.getElementById("velIzqTexto").textContent = velocidad * 3.6;
+            document.getElementById("velDerTexto").textContent = velocidad * 3.6;
+    
             if (distancia > 1) {
                 const angulo = Math.atan2(dy, dx);
                 posX += velocidad * Math.cos(angulo);
@@ -267,24 +276,14 @@
                 indiceTrayectoria++;
                 if (indiceTrayectoria >= puntos.length) {
                     enMovimiento = false;
+                    empezarMovimiento = false;
                 }
             }
         }
-
-
-        canvas.addEventListener('click', function(event) {
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-        
-            puntos.push({x, y});
-            objetivo = {x, y};
-        });
-
-        
+    
         function drawVehicle() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+    
             if (puntos.length > 1) {
                 ctx.beginPath();
                 ctx.moveTo(puntos[0].x, puntos[0].y);
@@ -295,14 +294,14 @@
                 ctx.lineWidth = 2;
                 ctx.stroke();
             }
-        
+    
             for (const punto of puntos) {
                 ctx.beginPath();
                 ctx.arc(punto.x, punto.y, 5, 0, 2 * Math.PI);
                 ctx.fillStyle = 'red';
                 ctx.fill();
             }
-        
+    
             ctx.save();
             ctx.translate(posX, posY);
             ctx.rotate(theta);
@@ -310,137 +309,108 @@
             ctx.fillRect(-20, -10, 40, 20);
             ctx.restore();
         }
-        
+    
         function moverHaciaObjetivo() {
             if (objetivo) {
                 const dx = objetivo.x - posX;
                 const dy = objetivo.y - posY;
                 const distancia = Math.sqrt(dx * dx + dy * dy);
-        
+    
                 if (distancia > 1) {
                     const dirX = dx / distancia;
                     const dirY = dy / distancia;
-        
+    
                     posX += dirX * velocidadMovimiento;
                     posY += dirY * velocidadMovimiento;
-                    
                     theta = Math.atan2(dirY, dirX);
                 } else {
                     objetivo = null;
+                    enMovimiento = false;
                 }
-                document.getElementById("velIzqTexto").textContent = 2 * 3.6;
-                document.getElementById("velDerTexto").textContent = 2 * 3.6;
+                document.getElementById("velIzqTexto").textContent = velocidadMovimiento * 3.6;
+                document.getElementById("velDerTexto").textContent = velocidadMovimiento * 3.6;
             }
         }
-        
-        canvas.addEventListener('mousedown', function (e) {
-            dibujando = true;
-            trayectoria = []; // Resetea la trayectoria anterior
-            agregarPunto(e);
-        });
-        
-        canvas.addEventListener('mousemove', function (e) {
-            if (dibujando) {
-                agregarPunto(e);
-            }
-        });
-        
-        canvas.addEventListener('mouseup', function () {
-            dibujando = false;
-            if (trayectoria.length > 0) {
-                enMovimiento = true;
-                indiceTrayectoria = 0;
-            }
-        });
-        
-        function agregarPunto(e) {
-            const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-            trayectoria.push({ x, y });
-        }
-        
-        function simularMovimiento() {
-            const voltajeMax = 12;
-            const velMax = 2;
-        
-            let voltajeIzq = parseFloat(document.getElementById("voltajeIzquierdo").value);
-            let voltajeDer = parseFloat(document.getElementById("voltajeDerecho").value);
-        
-            voltajeIzq = Math.max(0, Math.min(voltajeIzq, voltajeMax));
-            voltajeDer = Math.max(0, Math.min(voltajeDer, voltajeMax));
-        
-            vIzqMax = (voltajeIzq / voltajeMax) * velMax;
-            vDerMax = (voltajeDer / voltajeMax) * velMax;
-            
-            document.getElementById("velIzqTexto").textContent = vIzqMax.toFixed(2)* 3.6;
-            document.getElementById("velDerTexto").textContent = vDerMax.toFixed(2)* 3.6;
-        }
-        
+    
         function updateFromKeyboard() {
             let avance = 0;
             let giro = 0;
-        
+    
             if (keys["ArrowUp"]) avance = 1;
             if (keys["ArrowDown"]) avance = -1;
             if (keys["ArrowLeft"]) giro = 1;
             if (keys["ArrowRight"]) giro = -1;
-        
+    
             vIzq = (avance * vIzqMax) + (giro * vIzqMax);
             vDer = (avance * vDerMax) - (giro * vDerMax);
         }
-        
+    
+        function updatePosition() {
+            const dt = 1;
+    
+            const v = (vIzq + vDer) / 2;
+            const omega = (vDer - vIzq) / L;
+    
+            theta += omega * dt;
+            posX += v * Math.cos(theta) * dt;
+            posY += v * Math.sin(theta) * dt;
+        }
+    
+        function loop() {
+            updateFromKeyboard();
+            updatePosition();
+            drawVehicle();
+    
+            if (modoPuntoAPunto) {
+                moverHaciaObjetivo();
+            } else {
+                moverEnTrayectoria();
+            }
+    
+            document.getElementById("posXTexto").textContent = posX.toFixed(0);
+            document.getElementById("posYTexto").textContent = posY.toFixed(0);
+    
+            requestAnimationFrame(loop);
+        }
+    
         function ajustarTamañoCanvas() {
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
         }
         ajustarTamañoCanvas();
-        
-        // Actualizar posición según vIzq y vDer
-        function updatePosition() {
-            const dt = 1;
-        
-            const v = (vIzq + vDer) / 2;
-            const omega = (vDer - vIzq) / L;
-        
-            theta += omega * dt;
-            posX += v * Math.cos(theta) * dt;
-            posY += v * Math.sin(theta) * dt;
-        }
-        
+    
         window.addEventListener("keydown", (e) => { keys[e.key] = true; });
         window.addEventListener("keyup", (e) => { keys[e.key] = false; });
-        
-        function loop() {
-            updateFromKeyboard();
-            updatePosition();
-            drawVehicle();
-            
-            if (modoPuntoAPunto) {
-                moverHaciaObjetivo(); // solo en modo 1
-            } else {
-                moverEnTrayectoria(); // solo en modo 2
-            }
-            
-            document.getElementById("posXTexto").textContent = posX.toFixed(0);
-            document.getElementById("posYTexto").textContent = posY.toFixed(0);
-            requestAnimationFrame(loop);
-        }
-        
-        drawVehicle();
-        loop();
-        
-        
-        window.addEventListener("keydown", function (e) {
-          const scrollKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"," "];
     
+        window.addEventListener("keydown", function (e) {
+          const scrollKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "];
           if (scrollKeys.includes(e.key)) {
             e.preventDefault();
           }
         }, { passive: false });
-        
+    
         document.getElementById("voltajeIzquierdo").addEventListener("change", simularMovimiento);
         document.getElementById("voltajeDerecho").addEventListener("change", simularMovimiento);
+    
+        function simularMovimiento() {
+            const voltajeMax = 12;
+            const velMax = 2;
+    
+            let voltajeIzq = parseFloat(document.getElementById("voltajeIzquierdo").value);
+            let voltajeDer = parseFloat(document.getElementById("voltajeDerecho").value);
+    
+            voltajeIzq = Math.max(0, Math.min(voltajeIzq, voltajeMax));
+            voltajeDer = Math.max(0, Math.min(voltajeDer, voltajeMax));
+    
+            vIzqMax = (voltajeIzq / voltajeMax) * velMax;
+            vDerMax = (voltajeDer / voltajeMax) * velMax;
+    
+            document.getElementById("velIzqTexto").textContent = (vIzqMax * 3.6).toFixed(2);
+            document.getElementById("velDerTexto").textContent = (vDerMax * 3.6).toFixed(2);
+        }
+    
+        drawVehicle();
+        loop();
     </script>
 </body>
 </html>
