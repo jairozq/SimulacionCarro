@@ -99,8 +99,9 @@
 </head>
 
 <body>
-    <div id="simulacion" class="container row">
+    <div id="simulacion" class="container center">
         <h3>Simulación de Carrito Diferencial</h3>
+        Motor Simulado (DC RS-775 12V)
         <div class="card">
             <div class="content">
                 <label class="label">Voltaje Motor Izquierdo (V)</label>
@@ -115,6 +116,26 @@
                 <h3 style="color: #ff7f7f;">Simulación Gráfica del Vehículo</h3>
             
                 <div class="card p-4 my-3">
+                    <div id="modalVelocidades" style="
+                        position: absolute;
+                        top: 100px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        width: 300px;
+                        background-color: rgba(255, 255, 255, 0.9);
+                        border: 1px solid #ccc;
+                        border-radius: 8px;
+                        padding: 15px;
+                        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+                        z-index: 999;
+                        display: none;
+                        text-align: center;
+                    ">
+                        <h5 style="color: #ff7f7f;">Velocidades Calculadas</h5>
+                        <p><strong>Motor Izquierdo:</strong> <span id="velIzqTexto">0 </span> km/h</p>
+                        <p><strong>Motor Derecho:</strong> <span id="velDerTexto">0 </span>km/h</p>
+                        <button onclick="document.getElementById('modalVelocidades').style.display='none'">Cerrar</button>
+                    </div>
                     <canvas id="simulationCanvas" width="600" height="400" style="border:1px solid #ccc;"></canvas>
                     <p style="margin-top:10px;">Usa las teclas de flechas (↑ ↓ ← →) para mover el vehículo.</p>
                 </div>
@@ -184,7 +205,7 @@
         
         function simularMovimiento() {
             const voltajeMax = 12;
-            const velMax = 2; // velocidad máxima en pixeles por frame
+            const velMax = 2;
         
             let voltajeIzq = parseFloat(document.getElementById("voltajeIzquierdo").value);
             let voltajeDer = parseFloat(document.getElementById("voltajeDerecho").value);
@@ -194,6 +215,10 @@
         
             vIzqMax = (voltajeIzq / voltajeMax) * velMax;
             vDerMax = (voltajeDer / voltajeMax) * velMax;
+            
+            document.getElementById("velIzqTexto").textContent = vIzqMax.toFixed(2)* 3.6;
+            document.getElementById("velDerTexto").textContent = vDerMax.toFixed(2)* 3.6;
+            document.getElementById("modalVelocidades").style.display = "block";
         }
         
         // Moverse con teclas
